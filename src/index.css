@@ -1,0 +1,21 @@
+@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.fc {
+  background: #121212;
+  color: white;
+}
+
+.fc-daygrid-day {
+  background: #1c1c1c;
+}
+
+.fc-daygrid-day:hover {
+  background: #2a2a2a;
+}
+
+.fc-toolbar-title {
+  color: #facc15;
+}
