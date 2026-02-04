@@ -1,99 +1,97 @@
-import { useState } from 'react'
-import TaskTable from '../components/TaskTable'
-import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react'
-import MiniCalendar from '../components/MiniCalendar'
+import { useNavigate, useParams } from "react-router-dom";
+import TaskTable from "../components/TaskTable";
+import { ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
+import MiniCalendar from "../components/MiniCalendar";
 
-const todayISO = () => new Date().toISOString().split('T')[0]
+const todayISO = () => new Date().toISOString().split("T")[0];
 
 export default function Daily() {
-    const [selectedDate, setSelectedDate] = useState(todayISO())
+  const navigate = useNavigate();
+  const { date } = useParams<{ date: string }>();
 
-    const changeDay = (offset: number) => {
-        const d = new Date(selectedDate)
-        d.setDate(d.getDate() + offset)
-        setSelectedDate(d.toISOString().split('T')[0])
-    }
+  const selectedDate = date ?? todayISO();
 
-    const formatLabel = (dateStr: string) => {
-        const today = new Date()
-        const target = new Date(dateStr)
+  const navigateToDate = (newDate: string) => {
+    navigate(`/daily/${newDate}`);
+  };
 
-        const cleanToday = new Date(today.setHours(0, 0, 0, 0))
-        const cleanTarget = new Date(target.setHours(0, 0, 0, 0))
+  const changeDay = (offset: number) => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() + offset);
+    navigateToDate(d.toISOString().split("T")[0]);
+  };
 
-        const diff =
-            (cleanTarget.getTime() - cleanToday.getTime()) /
-            (1000 * 60 * 60 * 24)
+  const formatLabel = (dateStr: string) => {
+    const today = new Date();
+    const target = new Date(dateStr);
 
-        const formattedDate = target.toLocaleDateString(undefined, {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        })
+    const cleanToday = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
+    const cleanTarget = new Date(
+      target.getFullYear(),
+      target.getMonth(),
+      target.getDate(),
+    );
 
-        if (diff === 0) return `Today (${formattedDate})`
-        if (diff === -1) return `Yesterday (${formattedDate})`
-        if (diff === 1) return `Tomorrow (${formattedDate})`
+    const diff =
+      (cleanTarget.getTime() - cleanToday.getTime()) / (1000 * 60 * 60 * 24);
 
-        return target.toLocaleDateString(undefined, {
-            weekday: 'short',
-            month: 'short',
-            day: 'numeric'
-        })
-    }
+    const formattedDate = target.toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
 
-    return (
-        <div className="space-y-6 bg-black p-2">
+    if (diff === 0) return `Today (${formattedDate})`;
+    if (diff === -1) return `Yesterday (${formattedDate})`;
+    if (diff === 1) return `Tomorrow (${formattedDate})`;
 
-            {/* HEADER */}
-            <div className="flex items-center justify-between bg-[#121212] p-4 rounded-2xl shadow-lg">
+    return target.toLocaleDateString(undefined, {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    });
+  };
 
-                {/* Title */}
-                <h1 className="text-xl font-semibold text-yellow-400">
-                    {formatLabel(selectedDate)}
-                </h1>
+  return (
+    <div className="space-y-6 bg-black p-2">
+      <div className="flex items-center justify-between bg-[#121212] p-4 rounded-2xl shadow-lg">
+        <h1 className="text-xl font-semibold text-yellow-400">
+          {formatLabel(selectedDate)}
+        </h1>
 
-                {/* ICON CONTROLS */}
-                <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => changeDay(-1)}
+            className="p-2 rounded-lg bg-[#1c1c1c] hover:bg-[#2a2a2a] text-white"
+          >
+            <ChevronLeft size={18} />
+          </button>
 
-                    {/* Previous */}
-                    <button
-                        onClick={() => changeDay(-1)}
-                        className="p-2 rounded-lg bg-[#1c1c1c] hover:bg-[#2a2a2a] text-white"
-                    >
-                        <ChevronLeft size={18} />
-                    </button>
+          <button
+            onClick={() => navigateToDate(todayISO())}
+            className="p-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-black font-semibold"
+          >
+            <RotateCcw size={16} />
+          </button>
 
-                    {/* Today (Primary → Orange) */}
-                    <button
-                        onClick={() => setSelectedDate(todayISO())}
-                        className="p-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-black font-semibold"
-                    >
-                        <RotateCcw size={16} />
-                    </button>
+          <button
+            onClick={() => changeDay(1)}
+            className="p-2 rounded-lg bg-[#1c1c1c] hover:bg-[#2a2a2a] text-white"
+          >
+            <ChevronRight size={18} />
+          </button>
 
-                    {/* Next */}
-                    <button
-                        onClick={() => changeDay(1)}
-                        className="p-2 rounded-lg bg-[#1c1c1c] hover:bg-[#2a2a2a] text-white"
-                    >
-                        <ChevronRight size={18} />
-                    </button>
-
-                    {/* Date Picker */}
-                    <label className="relative p-2 rounded-lg bg-[#1c1c1c] hover:bg-[#2a2a2a] cursor-pointer text-white">
-                        <MiniCalendar
-                            value={selectedDate}
-                            onChange={setSelectedDate}
-                        />
-                    </label>
-
-                </div>
-            </div>
-
-            {/* TASK LIST */}
-            <TaskTable date={selectedDate} />
-
+          <label className="relative p-2 rounded-lg bg-[#1c1c1c] hover:bg-[#2a2a2a] cursor-pointer text-white">
+            <MiniCalendar value={selectedDate} onChange={navigateToDate} />
+          </label>
         </div>
-    )
+      </div>
+
+      <TaskTable date={selectedDate} />
+    </div>
+  );
 }

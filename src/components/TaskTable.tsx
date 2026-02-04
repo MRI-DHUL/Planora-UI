@@ -20,11 +20,8 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 import type { Task } from "../utils/taskUtils";
-import { getTasksForDate } from "../utils/taskUtils";
+import { getTasksForDate, isTaskOverdue } from "../utils/taskUtils";
 
-/* =========================
-   SORTABLE ROW
-========================= */
 function Row({
   task,
   updateTask,
@@ -33,7 +30,11 @@ function Row({
   addTask,
 }: {
   task: Task;
-  updateTask: <K extends keyof Task>(id: number, field: K, value: Task[K]) => void;
+  updateTask: <K extends keyof Task>(
+    id: number,
+    field: K,
+    value: Task[K],
+  ) => void;
   toggleComplete: (id: number) => void;
   deleteTask: (id: number) => void;
   addTask: () => void;
@@ -63,26 +64,56 @@ function Row({
         onChange={() => toggleComplete(task.id)}
       />
 
-      {/* TITLE */}
-      <input
-        value={task.title}
-        placeholder="Task..."
-        onKeyDown={(e) => {
-          if (e.key === "Enter") addTask();
-        }}
-        onChange={(e) => updateTask(task.id, "title", e.target.value)}
-        className={`flex-1 bg-transparent outline-none transition ${
-          task.completed ? "line-through text-gray-500 opacity-60" : ""
-        }`}
-      />
+      <div className="relative group flex-1">
+        {/* TASK TITLE */}
+        <input
+          value={task.title}
+          placeholder="Task..."
+          onKeyDown={(e) => {
+            if (e.key === "Enter") addTask();
+          }}
+          onChange={(e) => updateTask(task.id, "title", e.target.value)}
+          className={`w-full bg-transparent outline-none transition
+      ${
+        task.completed
+          ? "line-through text-gray-500 opacity-60"
+          : isTaskOverdue(task.date, task.time, task.completed)
+            ? "text-red-500 font-semibold"
+            : ""
+      }`}
+        />
 
-      {/* PRIORITY */}
+        {/* OVERDUE BADGE + TOOLTIP (NAME HOVER ONLY) */}
+        {isTaskOverdue(task.date, task.time, task.completed) && (
+          <span
+            className="
+              pointer-events-none
+              absolute left-0 top-full mt-1
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            "
+          >
+            <span
+              className="
+                inline-flex items-center rounded-full
+                bg-red-600/20 text-red-500
+                px-2 py-0.5 text-[10px] font-semibold
+                border border-red-600/40
+                shadow-lg
+              "
+            >
+              Overdue
+            </span>
+          </span>
+        )}
+      </div>
+
       <PriorityDropdown
         value={task.priority}
         onChange={(v) => updateTask(task.id, "priority", v)}
       />
 
-      {/* TIME */}
       <div className="relative">
         <TimeDropdown
           value={task.time}
@@ -90,23 +121,17 @@ function Row({
         />
       </div>
 
-      {/* REPEAT */}
       <RepeatDropdown
         value={task.repeat}
         onChange={(v) => updateTask(task.id, "repeat", v)}
       />
 
-      {/* DELETE */}
       <button onClick={() => deleteTask(task.id)}>
         <Trash2 color="red" size={16} />
       </button>
     </div>
   );
 }
-
-/* =========================
-   MAIN
-========================= */
 
 export default function TaskTable({ date }: { date: string }) {
   const [tasks, setTasks] = useState<Task[]>(() =>
@@ -117,7 +142,6 @@ export default function TaskTable({ date }: { date: string }) {
     localStorage.setItem("planner_tasks", JSON.stringify(tasks));
   }, [tasks]);
 
-  /* FILTER + SORT */
   const todayTasks = getTasksForDate(date, tasks).sort(
     (a, b) =>
       Number(a.completed) - Number(b.completed) ||
@@ -130,29 +154,28 @@ export default function TaskTable({ date }: { date: string }) {
   const sensors = useSensors(useSensor(PointerSensor));
 
   const getCurrentTime = () => {
-  const now = new Date();
-  now.setMinutes(Math.round(now.getMinutes() / 5) * 5);
+    const now = new Date();
+    now.setMinutes(Math.round(now.getMinutes() / 5) * 5);
 
-  const h = String(now.getHours()).padStart(2, "0");
-  const m = String(now.getMinutes()).padStart(2, "0");
-  return `${h}:${m}`;
-};
+    const h = String(now.getHours()).padStart(2, "0");
+    const m = String(now.getMinutes()).padStart(2, "0");
+    return `${h}:${m}`;
+  };
 
-  /* ACTIONS */
   const addTask = () => {
-  setTasks((prev) => [
-    ...prev,
-    {
-      id: Date.now(),
-      title: "",
-      priority: "Low",
-      time: getCurrentTime(),
-      completed: false,
-      date,
-      repeat: "none",
-    },
-  ]);
-};
+    setTasks((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        title: "",
+        priority: "Low",
+        time: getCurrentTime(),
+        completed: false,
+        date,
+        repeat: "none",
+      },
+    ]);
+  };
 
   const deleteTask = (id: number) =>
     setTasks((prev) => prev.filter((t) => t.id !== id));
@@ -162,7 +185,11 @@ export default function TaskTable({ date }: { date: string }) {
       prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)),
     );
 
-  const updateTask = <K extends keyof Task>(id: number, field: K, value: Task[K]) =>
+  const updateTask = <K extends keyof Task>(
+    id: number,
+    field: K,
+    value: Task[K],
+  ) =>
     setTasks((prev) =>
       prev.map((t) => (t.id === id ? { ...t, [field]: value } : t)),
     );
@@ -180,13 +207,8 @@ export default function TaskTable({ date }: { date: string }) {
     setTasks([...others, ...reordered]);
   };
 
-  /* =========================
-       UI
-    ========================= */
-
   return (
     <div className="space-y-4">
-      {/* HEADER CONTROLS */}
       <div
         className="
                 flex items-center justify-between
@@ -218,14 +240,12 @@ export default function TaskTable({ date }: { date: string }) {
         </div>
       </div>
 
-      {/* EMPTY */}
       {todayTasks.length === 0 && (
         <div className="text-center text-gray-500 py-12 bg-[#121212] rounded-xl">
           ✨ Nothing planned
         </div>
       )}
 
-      {/* LIST */}
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
