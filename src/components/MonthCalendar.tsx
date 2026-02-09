@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getTasksByDate, isTaskOverdue } from "../utils/taskUtils";
+import { getTasksByDate, isTaskOverdue, isTaskCompletedOnDate } from "../utils/taskUtils";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -116,9 +116,9 @@ export default function MonthCalendar() {
                       key={task.id}
                       className={`text-[11px] font-medium rounded px-1 py-0.5 truncate
                       ${
-                        task.completed
+                        isTaskCompletedOnDate(task, dateKey)
                           ? "bg-green-600 text-black"
-                          : isTaskOverdue(task.date, task.time, task.completed)
+                          : isTaskOverdue(task.date, task.time, isTaskCompletedOnDate(task, dateKey))
                             ? "bg-red-800 text-white"
                             : "bg-neutral-700 text-white"
                       }`}

@@ -20,16 +20,25 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 import type { Task } from "../utils/taskUtils";
-import { getTasksForDate, isTaskOverdue } from "../utils/taskUtils";
+import {
+  getAllTasks,
+  saveAllTasks,
+  getTasksForDate,
+  isTaskOverdue,
+  isTaskCompletedOnDate,
+  toggleTaskCompletionForDate,
+} from "../utils/taskUtils";
 
 function Row({
   task,
+  date,
   updateTask,
   toggleComplete,
   deleteTask,
   addTask,
 }: {
   task: Task;
+  date: string;
   updateTask: <K extends keyof Task>(
     id: number,
     field: K,
@@ -60,7 +69,7 @@ function Row({
       <input
         type="checkbox"
         className="accent-app-orange"
-        checked={task.completed}
+        checked={isTaskCompletedOnDate(task, date)}
         onChange={() => toggleComplete(task.id)}
       />
 
@@ -75,16 +84,20 @@ function Row({
           onChange={(e) => updateTask(task.id, "title", e.target.value)}
           className={`w-full bg-transparent outline-none transition
       ${
-        task.completed
+        isTaskCompletedOnDate(task, date)
           ? "line-through text-gray-500 opacity-60"
-          : isTaskOverdue(task.date, task.time, task.completed)
+          : isTaskOverdue(task.date, task.time, false)
             ? "text-red-500 font-semibold"
             : ""
       }`}
         />
 
         {/* OVERDUE BADGE + TOOLTIP (NAME HOVER ONLY) */}
-        {isTaskOverdue(task.date, task.time, task.completed) && (
+        {isTaskOverdue(
+          task.date,
+          task.time,
+          isTaskCompletedOnDate(task, date),
+        ) && (
           <span
             className="
               pointer-events-none
@@ -134,21 +147,29 @@ function Row({
 }
 
 export default function TaskTable({ date }: { date: string }) {
-  const [tasks, setTasks] = useState<Task[]>(() =>
-    JSON.parse(localStorage.getItem("planner_tasks") || "[]"),
-  );
+  const [tasks, setTasks] = useState<Task[]>(() => {
+    const stored = getAllTasks();
+    return stored.map((t) => ({
+      ...t,
+      completedDates: Array.isArray(t.completedDates) ? t.completedDates : [],
+    }));
+  });
 
   useEffect(() => {
-    localStorage.setItem("planner_tasks", JSON.stringify(tasks));
+    saveAllTasks(tasks);
   }, [tasks]);
 
   const todayTasks = getTasksForDate(date, tasks).sort(
     (a, b) =>
-      Number(a.completed) - Number(b.completed) ||
+      Number(isTaskCompletedOnDate(a, date)) -
+        Number(isTaskCompletedOnDate(b, date)) ||
       (a.time || "").localeCompare(b.time || ""),
   );
 
-  const completed = todayTasks.filter((t) => t.completed).length;
+  const completed = todayTasks.filter((t) =>
+    isTaskCompletedOnDate(t, date),
+  ).length;
+
   const total = todayTasks.length;
 
   const sensors = useSensors(useSensor(PointerSensor));
@@ -170,9 +191,9 @@ export default function TaskTable({ date }: { date: string }) {
         title: "",
         priority: "Low",
         time: getCurrentTime(),
-        completed: false,
         date,
         repeat: "none",
+        completedDates: [],
       },
     ]);
   };
@@ -182,7 +203,7 @@ export default function TaskTable({ date }: { date: string }) {
 
   const toggleComplete = (id: number) =>
     setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)),
+      prev.map((t) => (t.id === id ? toggleTaskCompletionForDate(t, date) : t)),
     );
 
   const updateTask = <K extends keyof Task>(
@@ -230,7 +251,7 @@ export default function TaskTable({ date }: { date: string }) {
           <button
             onClick={() =>
               setTasks((prev) =>
-                prev.filter((t) => !(t.date === date && t.completed)),
+                prev.filter((t) => !isTaskCompletedOnDate(t, date)),
               )
             }
             className="px-4 py-2 border border-yellow-400 text-yellow-400 rounded-lg hover:bg-yellow-400/10"
@@ -259,6 +280,7 @@ export default function TaskTable({ date }: { date: string }) {
             <Row
               key={task.id}
               task={task}
+              date={date}
               updateTask={updateTask}
               toggleComplete={toggleComplete}
               deleteTask={deleteTask}

@@ -9,7 +9,7 @@ export type Task = {
   title: string
   priority: "High" | "Medium" | "Low"
   time: string
-  completed: boolean
+  completedDates: string[]
   date: string // YYYY-MM-DD
   repeat: Repeat
 }
@@ -99,4 +99,27 @@ export const isTaskOverdue = (
   if (taskDate !== todayISO) return false
 
   return taskDateTime < today
+}
+
+export const isTaskCompletedOnDate = (
+  task: Task,
+  date: string
+): boolean => {
+  return Array.isArray(task.completedDates)
+    ? task.completedDates.includes(date)
+    : false
+}
+
+export const toggleTaskCompletionForDate = (
+  task: Task,
+  date: string
+): Task => {
+  const completed = task.completedDates.includes(date)
+
+  return {
+    ...task,
+    completedDates: completed
+      ? task.completedDates.filter(d => d !== date)
+      : [...task.completedDates, date],
+  }
 }
