@@ -74,34 +74,12 @@ function Row({
       />
 
       <div className="relative group flex-1">
-        {/* TASK TITLE */}
-        <input
-          value={task.title}
-          placeholder="Task..."
-          onKeyDown={(e) => {
-            if (e.key === "Enter") addTask();
-          }}
-          onChange={(e) => updateTask(task.id, "title", e.target.value)}
-          className={`w-full bg-transparent outline-none transition
-      ${
-        isTaskCompletedOnDate(task, date)
-          ? "line-through text-gray-500 opacity-60"
-          : isTaskOverdue(task.date, task.time, false)
-            ? "text-red-500 font-semibold"
-            : ""
-      }`}
-        />
-
-        {/* OVERDUE BADGE + TOOLTIP (NAME HOVER ONLY) */}
-        {isTaskOverdue(
-          task.date,
-          task.time,
-          isTaskCompletedOnDate(task, date),
-        ) && (
+        {/* OVERDUE BADGE (ABOVE NAME) */}
+        {isTaskOverdue(task, date) && (
           <span
             className="
               pointer-events-none
-              absolute left-0 top-full mt-1
+              absolute left-0 -top-6
               opacity-0 scale-95
               transition-all duration-150
               group-hover:opacity-100 group-hover:scale-100
@@ -120,6 +98,24 @@ function Row({
             </span>
           </span>
         )}
+
+        {/* TASK TITLE */}
+        <input
+          value={task.title}
+          placeholder="Task..."
+          onKeyDown={(e) => {
+            if (e.key === "Enter") addTask();
+          }}
+          onChange={(e) => updateTask(task.id, "title", e.target.value)}
+          className={`w-full bg-transparent outline-none transition
+      ${
+        isTaskCompletedOnDate(task, date)
+          ? "line-through text-gray-500 opacity-60"
+          : isTaskOverdue(task, date)
+            ? "text-red-500 font-semibold"
+            : ""
+      }`}
+        />
       </div>
 
       <PriorityDropdown

@@ -2,65 +2,83 @@
    TYPES — ALWAYS EXPLICIT
 ================================= */
 
-export type Repeat = "none" | "daily" | "weekly"
+export type Repeat = "none" | "daily" | "weekly";
 
 export type Task = {
-  id: number
-  title: string
-  priority: "High" | "Medium" | "Low"
-  time: string
-  completedDates: string[]
-  date: string // YYYY-MM-DD
-  repeat: Repeat
-}
+  id: number;
+  title: string;
+  priority: "High" | "Medium" | "Low";
+  time: string;
+  completedDates: string[]; // per-day completion
+  date: string; // start date YYYY-MM-DD
+  repeat: Repeat;
+};
 
 /* =================================
    STORAGE HELPERS
 ================================= */
 
-const STORAGE_KEY = "planner_tasks"
+const STORAGE_KEY = "planner_tasks";
 
 export const getAllTasks = (): Task[] => {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]")
+    const stored = JSON.parse(
+      localStorage.getItem(STORAGE_KEY) || "[]"
+    );
+
+    // Ensure stored is an array
+    if (!Array.isArray(stored)) {
+      return [];
+    }
+
+    // Normalize old tasks
+    return stored.map((t: any) => ({
+      ...t,
+      completedDates: Array.isArray(t.completedDates)
+        ? t.completedDates
+        : [],
+    }));
   } catch {
-    return []
+    return [];
   }
-}
+};
 
 export const saveAllTasks = (tasks: Task[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks))
-}
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+};
 
 /* =================================
    CORE LOGIC — SINGLE SOURCE OF TRUTH
-   (USED BY DAILY + MONTHLY)
 ================================= */
 
-export const getTasksForDate = (date: string, tasks: Task[]): Task[] => {
-  const current = new Date(date)
-  current.setHours(0, 0, 0, 0)
+export const getTasksForDate = (
+  date: string,
+  tasks: Task[]
+): Task[] => {
+  const current = new Date(date);
+  current.setHours(0, 0, 0, 0);
 
-  return tasks.filter(t => {
-    const start = new Date(t.date)
-    start.setHours(0, 0, 0, 0)
+  return tasks.filter((t) => {
+    const start = new Date(t.date);
+    start.setHours(0, 0, 0, 0);
 
-    if (current < start) return false
+    // ❌ Never show before start date
+    if (current < start) return false;
 
     // Exact date
-    if (t.date === date) return true
+    if (t.date === date) return true;
 
-    // Daily repeat → from start date onwards
-    if (t.repeat === "daily") return true
+    // Daily repeat
+    if (t.repeat === "daily") return true;
 
-    // Weekly repeat → same weekday, from start date onwards
+    // Weekly repeat (same weekday)
     if (t.repeat === "weekly") {
-      return start.getDay() === current.getDay()
+      return start.getDay() === current.getDay();
     }
 
-    return false
-  })
-}
+    return false;
+  });
+};
 
 /* =================================
    MONTHLY VIEW HELPERS
@@ -71,35 +89,13 @@ export const getTasksForDate = (date: string, tasks: Task[]): Task[] => {
  * Pulls tasks from storage + applies repeat rules
  */
 export const getTasksByDate = (date: string): Task[] => {
-  const tasks = getAllTasks()
-  return getTasksForDate(date, tasks)
-}
+  const tasks = getAllTasks();
+  return getTasksForDate(date, tasks);
+};
 
-/**
- * Used for badges / counts if needed later
- */
-export const getTaskCountByDate = (date: string): number => {
-  return getTasksByDate(date).length
-}
-
-
-export const isTaskOverdue = (
-  taskDate: string,
-  taskTime: string,
-  completed: boolean
-): boolean => {
-  if (completed) return false
-  if (!taskTime) return false
-
-  const today = new Date()
-  const taskDateTime = new Date(`${taskDate}T${taskTime}`)
-
-  // Only today should be considered overdue
-  const todayISO = today.toISOString().split("T")[0]
-  if (taskDate !== todayISO) return false
-
-  return taskDateTime < today
-}
+/* =================================
+   COMPLETION (PER DAY)
+================================= */
 
 export const isTaskCompletedOnDate = (
   task: Task,
@@ -107,19 +103,47 @@ export const isTaskCompletedOnDate = (
 ): boolean => {
   return Array.isArray(task.completedDates)
     ? task.completedDates.includes(date)
-    : false
-}
+    : false;
+};
 
 export const toggleTaskCompletionForDate = (
   task: Task,
   date: string
 ): Task => {
-  const completed = task.completedDates.includes(date)
+  const completed = isTaskCompletedOnDate(task, date);
 
   return {
     ...task,
     completedDates: completed
-      ? task.completedDates.filter(d => d !== date)
+      ? task.completedDates.filter((d) => d !== date)
       : [...task.completedDates, date],
-  }
-}
+  };
+};
+
+/* =================================
+   OVERDUE — FINAL & CORRECT
+================================= */
+
+/**
+ * A task is overdue if:
+ * - Not completed for that date
+ * - Has a time
+ * - date + time < now
+ *
+ * Works for yesterday, today, and any past date.
+ */
+export const isTaskOverdue = (
+  task: Task,
+  date: string
+): boolean => {
+  // Completed for this date → never overdue
+  if (isTaskCompletedOnDate(task, date)) return false;
+
+  // No time → cannot be overdue
+  if (!task.time) return false;
+
+  const taskDateTime = new Date(`${date}T${task.time}`);
+  const now = new Date();
+
+  return taskDateTime < now;
+};

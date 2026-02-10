@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getTasksByDate, isTaskOverdue, isTaskCompletedOnDate } from "../utils/taskUtils";
+import {
+  getTasksByDate,
+  isTaskOverdue,
+  isTaskCompletedOnDate,
+  type Task,
+} from "../utils/taskUtils";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -105,7 +110,7 @@ export default function MonthCalendar() {
 
               {/* TASKS (READ-ONLY) */}
               <div className="space-y-1">
-                {tasks.slice(0, 2).map((task) => {
+                {tasks.slice(0, 2).map((task: Task) => {
                   const isTruncated = task.title.length > 5;
                   const shortTitle = isTruncated
                     ? task.title.slice(0, 5)
@@ -118,7 +123,7 @@ export default function MonthCalendar() {
                       ${
                         isTaskCompletedOnDate(task, dateKey)
                           ? "bg-green-600 text-black"
-                          : isTaskOverdue(task.date, task.time, isTaskCompletedOnDate(task, dateKey))
+                          : isTaskOverdue(task, dateKey)
                             ? "bg-red-800 text-white"
                             : "bg-neutral-700 text-white"
                       }`}
