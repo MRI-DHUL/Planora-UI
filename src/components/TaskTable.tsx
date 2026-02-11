@@ -18,6 +18,7 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+//import { createGoogleEvent } from "../utils/googleCalendar";
 
 import type { Task } from "../utils/taskUtils";
 import {
@@ -179,19 +180,38 @@ export default function TaskTable({ date }: { date: string }) {
     return `${h}:${m}`;
   };
 
-  const addTask = () => {
-    setTasks((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        title: "",
-        priority: "Low",
-        time: getCurrentTime(),
-        date,
-        repeat: "none",
-        completedDates: [],
-      },
-    ]);
+  const addTask = async () => {
+    const newTask = {
+      id: Date.now(),
+      title: "",
+      priority: "Low",
+      time: getCurrentTime(),
+      date,
+      repeat: "none",
+      completedDates: [],
+    };
+
+    setTasks((prev) => [...prev, newTask]);
+
+    // 🔥 GOOGLE SYNC
+    // const accessToken = localStorage.getItem("google_access_token");
+
+    // if (accessToken) {
+    //   try {
+    //     // Convert your HH:mm to full ISO datetime
+    //     const startDateTime = new Date(`${date}T${newTask.time}:00`);
+    //     const endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000); // 1 hour default
+
+    //     await createGoogleEvent(accessToken, {
+    //       summary: newTask.title || "Untitled Task",
+    //       description: "Created from Planora",
+    //       start: startDateTime.toISOString(),
+    //       end: endDateTime.toISOString(),
+    //     });
+    //   } catch (error) {
+    //     console.error("Google sync failed:", error);
+    //   }
+    // }
   };
 
   const deleteTask = (id: number) =>

@@ -2,6 +2,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import TaskTable from "../components/TaskTable";
 import { ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import MiniCalendar from "../components/MiniCalendar";
+import GoogleConnect from "../components/Google/GoogleConnect";
 
 const todayISO = () => new Date().toISOString().split("T")[0];
 
@@ -91,6 +92,7 @@ export default function Daily() {
         </div>
       </div>
 
+      <GoogleConnect />
       <TaskTable date={selectedDate} />
     </div>
   );
