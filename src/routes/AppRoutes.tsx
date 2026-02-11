@@ -1,8 +1,8 @@
-import { Routes, Route } from "react-router-dom"
-import Dashboard from "../pages/Dashboard"
-import Daily from "../pages/Daily"
-import Monthly from "../pages/Monthly"
-import MainLayout from "../layouts/MainLayout"
+import { Routes, Route } from "react-router-dom";
+import Dashboard from "../pages/Dashboard";
+import Daily from "../pages/Daily";
+import Monthly from "../pages/Monthly";
+import MainLayout from "../layouts/MainLayout";
 
 export default function AppRoutes() {
   return (
@@ -14,5 +14,5 @@ export default function AppRoutes() {
         <Route path="/monthly" element={<Monthly />} />
       </Route>
     </Routes>
-  )
+  );
 }
