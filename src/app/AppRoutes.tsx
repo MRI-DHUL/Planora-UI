@@ -6,6 +6,7 @@ import MainLayout from "../layouts/MainLayout";
 import ProtectedRoute from "../components/common/ProtectedRoute";
 import Login from "../features/auth/Login";
 import Register from "../features/auth/Register";
+import Settings from "../features/settings/Settings";
 
 export default function AppRoutes() {
   return (
@@ -24,6 +25,7 @@ export default function AppRoutes() {
         <Route path="/daily" element={<Daily />} />
         <Route path="/daily/:date" element={<Daily />} />
         <Route path="/monthly" element={<Monthly />} />
+        <Route path="/settings" element={<Settings />} />
       </Route>
     </Routes>
   );
