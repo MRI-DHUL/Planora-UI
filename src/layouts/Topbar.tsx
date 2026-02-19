@@ -11,6 +11,7 @@ export default function Topbar() {
     if (location.pathname.includes("dashboard")) return "Dashboard";
     if (location.pathname.includes("daily")) return "Daily Planner";
     if (location.pathname.includes("monthly")) return "Monthly Planner";
+    if (location.pathname.includes("settings")) return "Settings";
     return "";
   };
 
