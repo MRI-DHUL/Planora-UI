@@ -1,25 +1,22 @@
-import { useNavigate, useParams } from "react-router-dom";
 import TaskTable from "./components/TaskTable";
 import { ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import MiniCalendar from "./components/MiniCalendar";
 import GoogleConnect from "../google/GoogleConnect";
+import { useDate } from "../../context/DateContext";
 
 const todayISO = () => new Date().toISOString().split("T")[0];
 
 export default function Daily() {
-  const navigate = useNavigate();
-  const { date } = useParams<{ date: string }>();
-
-  const selectedDate = date ?? todayISO();
+  const { selectedDate, setSelectedDate } = useDate();
 
   const navigateToDate = (newDate: string) => {
-    navigate(`/daily/${newDate}`);
+    setSelectedDate(newDate);
   };
 
   const changeDay = (offset: number) => {
     const d = new Date(selectedDate);
     d.setDate(d.getDate() + offset);
-    navigateToDate(d.toISOString().split("T")[0]);
+    setSelectedDate(d.toISOString().split("T")[0]);
   };
 
   const formatLabel = (dateStr: string) => {
@@ -73,7 +70,7 @@ export default function Daily() {
           </button>
 
           <button
-            onClick={() => navigateToDate(todayISO())}
+            onClick={() => setSelectedDate(todayISO())}
             className="p-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-black font-semibold"
           >
             <RotateCcw size={16} />

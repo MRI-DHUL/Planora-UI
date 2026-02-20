@@ -23,7 +23,6 @@ export default function AppRoutes() {
       >
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/daily" element={<Daily />} />
-        <Route path="/daily/:date" element={<Daily />} />
         <Route path="/monthly" element={<Monthly />} />
         <Route path="/settings" element={<Settings />} />
       </Route>
