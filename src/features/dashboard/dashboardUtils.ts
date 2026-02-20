@@ -133,67 +133,85 @@ export const getProductivityTrend = (tasks: Task[], range: DashboardRange) => {
     const overdue = dayTasks.filter((task) => isTaskOverdue(task, date)).length;
 
     return {
-      date: date.slice(5), // MM-DD
+      date: date.slice(5),
       completed,
       overdue,
     };
   });
 };
 
-export const getStreakStats = (tasks: Task[]) => {
+export function getStreakStats(tasks: Task[]) {
+  const completedDates = new Set<string>();
+
+  tasks.forEach((task) => {
+    task.completedDates?.forEach((date) => {
+      completedDates.add(date);
+    });
+  });
+
+  if (completedDates.size === 0) {
+    return { currentStreak: 0, longestStreak: 0 };
+  }
+
+  const format = (d: Date) => d.toISOString().split("T")[0];
+
+  const sorted = Array.from(completedDates).sort(
+    (a, b) => new Date(b).getTime() - new Date(a).getTime(),
+  );
+
   const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+
+  const todayISO = format(today);
+  const yesterdayISO = format(yesterday);
+
+  const latestCompleted = sorted[0];
+
+  if (latestCompleted !== todayISO && latestCompleted !== yesterdayISO) {
+    return { currentStreak: 0, longestStreak: calculateLongest(sorted) };
+  }
+
   let currentStreak = 0;
-  let longestStreak = 0;
-  let tempStreak = 0;
+  const checkDate = new Date(latestCompleted);
 
-  // We check last 365 days max
-  for (let i = 365; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(today.getDate() - i);
-    const dateStr = d.toISOString().split("T")[0];
+  while (true) {
+    const iso = format(checkDate);
 
-    const dayTasks = getTasksForDate(dateStr, tasks);
-
-    const completedCount = dayTasks.filter((task) =>
-      isTaskCompletedOnDate(task, dateStr),
-    ).length;
-
-    if (completedCount > 0) {
-      tempStreak++;
-      longestStreak = Math.max(longestStreak, tempStreak);
+    if (completedDates.has(iso)) {
+      currentStreak++;
+      checkDate.setDate(checkDate.getDate() - 1);
     } else {
-      tempStreak = 0;
-    }
-
-    // Current streak = from today backwards
-    if (i === 0) {
-      let j = 0;
-      while (true) {
-        const checkDate = new Date();
-        checkDate.setDate(today.getDate() - j);
-        const checkStr = checkDate.toISOString().split("T")[0];
-
-        const checkTasks = getTasksForDate(checkStr, tasks);
-
-        const completed = checkTasks.filter((task) =>
-          isTaskCompletedOnDate(task, checkStr),
-        ).length;
-
-        if (completed > 0) {
-          currentStreak++;
-          j++;
-        } else {
-          break;
-        }
-      }
+      break;
     }
   }
 
   return {
     currentStreak,
-    longestStreak,
+    longestStreak: calculateLongest(sorted),
   };
-};
+}
+
+function calculateLongest(sorted: string[]) {
+  let longest = 0;
+  let temp = 1;
+
+  for (let i = 1; i < sorted.length; i++) {
+    const prev = new Date(sorted[i - 1]);
+    const curr = new Date(sorted[i]);
+
+    const diff = (prev.getTime() - curr.getTime()) / (1000 * 60 * 60 * 24);
+
+    if (diff === 1) {
+      temp++;
+    } else {
+      longest = Math.max(longest, temp);
+      temp = 1;
+    }
+  }
+
+  return Math.max(longest, temp);
+}
 
 export const getSmartInsights = (tasks: Task[]): SmartInsight[] => {
   const today = new Date();
@@ -207,7 +225,7 @@ export const getSmartInsights = (tasks: Task[]): SmartInsight[] => {
 
     const isCompleted = isTaskCompletedOnDate(task, todayISO);
 
-    // 1️⃣ High priority not completed
+    // High priority not completed
     if (task.priority === "High" && !isCompleted) {
       insights.push({
         id: task.id,
@@ -217,7 +235,7 @@ export const getSmartInsights = (tasks: Task[]): SmartInsight[] => {
       });
     }
 
-    // 2️⃣ Overdue more than 2 days
+    // Overdue more than 2 days
     const diffDays =
       (today.getTime() - taskDate.getTime()) / (1000 * 60 * 60 * 24);
 
@@ -230,7 +248,7 @@ export const getSmartInsights = (tasks: Task[]): SmartInsight[] => {
       });
     }
 
-    // 3️⃣ Stale task (created 7+ days ago, never completed)
+    // Stale task (created 7+ days ago, never completed)
     if (diffDays >= 7 && task.completedDates.length === 0) {
       insights.push({
         id: task.id,

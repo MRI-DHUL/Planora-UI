@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDate } from "../../../context/DateContext";
 import {
   getTasksByDate,
   isTaskOverdue,
@@ -11,6 +12,8 @@ const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default function MonthCalendar() {
   const navigate = useNavigate();
+  const { setSelectedDate } = useDate();
+
   const today = new Date();
 
   const [month, setMonth] = useState(today.getMonth());
@@ -77,12 +80,10 @@ export default function MonthCalendar() {
 
       {/* CALENDAR GRID */}
       <div className="grid grid-cols-7 gap-2">
-        {/* Padding */}
         {Array.from({ length: startPadding }).map((_, i) => (
           <div key={`pad-${i}`} />
         ))}
 
-        {/* Days */}
         {Array.from({ length: daysInMonth }).map((_, i) => {
           const day = i + 1;
           const dateKey = `${year}-${String(month + 1).padStart(
@@ -100,15 +101,16 @@ export default function MonthCalendar() {
           return (
             <div
               key={dateKey}
-              onClick={() => navigate(`/daily/${dateKey}`)}
+              onClick={() => {
+                setSelectedDate(dateKey);
+                navigate("/daily");
+              }}
               className={`min-h-[110px] rounded-xl border p-2 cursor-pointer transition
                 ${isToday ? "border-orange-500" : "border-neutral-700"}
                 hover:bg-neutral-800`}
             >
-              {/* DATE */}
               <div className="text-sm font-medium mb-1">{day}</div>
 
-              {/* TASKS (READ-ONLY) */}
               <div className="space-y-1">
                 {tasks.slice(0, 2).map((task: Task) => {
                   const isTruncated = task.title.length > 5;
